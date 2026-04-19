@@ -9,8 +9,8 @@ Sistema web para agendamento de consultas médicas, com painel administrativo.
 - **Frontend:** React (JavaScript)
 - **Backend:** Java 17 + Spring Boot 3
 - **Banco de dados:** MySQL 8
-- **Infraestrutura:** Docker + Docker Compose + Portainer
-- **Deploy:** VPS Hetzner + Nginx + Cloudflare (SSL Flexible)
+- **Infraestrutura:** Docker Swarm + Portainer + Traefik
+- **Deploy:** VPS Hetzner + Cloudflare (SSL via Let's Encrypt)
 - **CI/CD:** GitHub Actions
 
 ---
@@ -40,8 +40,8 @@ Sistema web para agendamento de consultas médicas, com painel administrativo.
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/sistema-agendamento.git
-cd sistema-agendamento
+git clone https://github.com/llopesbb/Agendamento-Clinica.git
+cd Agendamento-Clinica
 ```
 
 2. Edite o arquivo `.env` com suas configurações (ou mantenha os valores padrão para testes locais).
@@ -65,9 +65,7 @@ docker-compose up --build -d
 
 No painel da Hetzner, crie um servidor com **Ubuntu 22.04**, tipo CX22 ou superior.
 
-### 2. Instalar dependências na VPS
-
-Acesse a VPS via SSH e execute:
+### 2. Instalar o Docker e habilitar o Swarm
 
 ```bash
 # Atualizar sistema
@@ -77,42 +75,27 @@ sudo apt update && sudo apt upgrade -y
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 
-# Instalar Docker Compose
-sudo apt install docker-compose-plugin -y
-
-# Instalar Nginx
-sudo apt install nginx -y
-sudo systemctl enable nginx
-sudo systemctl start nginx
+# Habilitar modo Swarm
+docker swarm init
 ```
 
-### 3. Instalar o Portainer (gerenciamento visual de containers)
+### 3. Instalar o Portainer com Traefik
 
-```bash
-docker volume create portainer_data
-docker run -d \
-  -p 9000:9000 \
-  --name portainer \
-  --restart=always \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v portainer_data:/data \
-  portainer/portainer-ce
-```
+O Portainer é gerenciado visualmente e o Traefik atua como proxy reverso, emitindo SSL automaticamente via Let's Encrypt.
 
-Após instalar, acesse `http://IP_DA_VPS:9000` para configurar o Portainer.
+> Siga a documentação do seu stack de Portainer + Traefik para subir esses serviços na rede `Zeus1`.
 
-Com o Portainer você pode:
-- Subir e derrubar containers visualmente
+Após instalar, acesse o Portainer pelo endereço configurado. Com ele você pode:
+- Subir e derrubar serviços visualmente
 - Ver logs em tempo real
-- Reiniciar containers com um clique
-- Gerenciar o docker-compose sem usar o terminal
+- Reiniciar serviços com um clique
+- Gerenciar stacks sem usar o terminal
 
 ### 4. Clonar o repositório na VPS
 
 ```bash
-cd ~
-git clone https://github.com/seu-usuario/sistema-agendamento.git
-cd sistema-agendamento
+git clone https://github.com/llopesbb/Agendamento-Clinica.git ~/sistema-agendamento
+cd ~/sistema-agendamento
 ```
 
 ### 5. Configurar o arquivo `.env`
@@ -121,33 +104,30 @@ cd sistema-agendamento
 nano .env
 ```
 
-Edite os valores de `DOMINIO`, `MYSQL_USER`, `MYSQL_PASSWORD` e `MYSQL_ROOT_PASSWORD`.
+Edite `DOMINIO` com o subdomínio completo (ex: `agendamento.seudominio.com`) e ajuste as senhas do banco.
 
-### 6. Configurar o Nginx com seu domínio
+### 6. Configurar o Cloudflare
+
+1. No painel do Cloudflare, crie um registro **A** apontando o subdomínio para o IP da VPS
+2. Deixe o proxy do Cloudflare **desativado** (nuvem cinza) para que o Traefik consiga emitir o certificado via Let's Encrypt
+3. Após o certificado ser emitido, você pode reativar o proxy se quiser
+
+### 7. Primeiro deploy manual
 
 ```bash
-# Instala o envsubst (pacote gettext)
-sudo apt install gettext -y
+# Build das imagens
+docker build -t agendamento-backend:latest ./backend
+docker build -t agendamento-frontend:latest ./frontend
 
-# Gera o arquivo de configuração com o domínio do .env
-export $(cat .env | xargs) && envsubst '${DOMINIO}' < nginx/nginx.conf > /etc/nginx/sites-available/agendamento
-
-# Ativa o site
-sudo ln -s /etc/nginx/sites-available/agendamento /etc/nginx/sites-enabled/
-
-# Remove o site padrão (opcional)
-sudo rm -f /etc/nginx/sites-enabled/default
-
-# Testa e recarrega o Nginx
-sudo nginx -t && sudo systemctl reload nginx
+# Sobe o stack no Swarm
+export $(cat .env | grep -v '^#' | grep '=' | xargs)
+docker stack deploy -c stack.yml agendamento
 ```
 
-### 7. Configurar o Cloudflare
-
-1. Adicione o domínio no Cloudflare
-2. Aponte o registro A (`@` e/ou `www`) para o IP da VPS
-3. No Cloudflare, vá em **SSL/TLS** e selecione o modo **Flexible**
-4. Aguarde a propagação do DNS (pode levar alguns minutos)
+Verifique os serviços:
+```bash
+docker stack services agendamento
+```
 
 ### 8. Configurar os secrets do GitHub Actions
 
@@ -159,13 +139,7 @@ No repositório GitHub, vá em **Settings > Secrets and variables > Actions** e 
 | `VPS_USER` | Usuário SSH (ex: `root`) |
 | `VPS_KEY` | Chave SSH privada |
 
-### 9. Subir a aplicação
-
-```bash
-docker-compose up --build -d
-```
-
-Ou utilize o Portainer para iniciar os containers visualmente.
+A partir daí, todo push na branch `main` faz o deploy automaticamente.
 
 ---
 
@@ -182,13 +156,11 @@ Após subir o sistema, acesse `/login` com:
 
 | Variável | Descrição |
 |----------|-----------|
-| `DOMINIO` | Domínio do site (ex: `clinica.com.br`) |
+| `DOMINIO` | Subdomínio completo (ex: `agendamento.seudominio.com`) |
 | `MYSQL_DATABASE` | Nome do banco de dados |
 | `MYSQL_USER` | Usuário do banco |
 | `MYSQL_PASSWORD` | Senha do usuário do banco |
 | `MYSQL_ROOT_PASSWORD` | Senha do root do MySQL |
-| `FRONTEND_PORT` | Porta do frontend (padrão: 3000) |
-| `BACKEND_PORT` | Porta do backend (padrão: 8080) |
 
 ---
 
