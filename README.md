@@ -178,7 +178,11 @@ agendamentos     -- consultas agendadas por pacientes
 
 ## Prints do sistema
 
-> Adicione aqui prints das telas do sistema após o deploy.
+> <img width="2554" height="1262" alt="Screenshot 2026-04-19 at 16 10 41" src="https://github.com/user-attachments/assets/bc6e9204-34c5-4701-a80f-7980ce68d9e4" />
+> <img width="2555" height="1261" alt="Screenshot 2026-04-19 at 16 10 52" src="https://github.com/user-attachments/assets/86f5e209-1c4b-486c-a7d3-e3c692c32dbd" />
+
+
+
 
 ---
 
