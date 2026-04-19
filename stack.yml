@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - /root/sistema-agendamento/banco/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - interno
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  backend:
+    image: agendamento-backend:latest
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      - interno
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  frontend:
+    image: agendamento-frontend:latest
+    networks:
+      - interno
+      - Zeus1
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.agendamento.rule=Host(`${DOMINIO}`)"
+        - "traefik.http.routers.agendamento.entrypoints=websecure"
+        - "traefik.http.routers.agendamento.tls=true"
+        - "traefik.http.routers.agendamento.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.agendamento.loadbalancer.server.port=80"
+      restart_policy:
+        condition: on-failure
+
+networks:
+  interno:
+    driver: overlay
+  Zeus1:
+    external: true
+
+volumes:
+  mysql_data:

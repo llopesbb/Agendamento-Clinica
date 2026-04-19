@@ -1,0 +1,25 @@
+name: Deploy na VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Conectar na VPS e fazer deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+            cd ~/sistema-agendamento
+            git pull origin main
+            docker build -t agendamento-backend:latest ./backend
+            docker build -t agendamento-frontend:latest ./frontend
+            export $(cat .env | grep -v '^#' | grep '=' | xargs)
+            docker stack deploy -c stack.yml agendamento
