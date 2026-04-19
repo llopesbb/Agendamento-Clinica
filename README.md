@@ -184,10 +184,10 @@ agendamentos     -- consultas agendadas por pacientes
 
 ## Link do deploy
 
-> https://seudominio.com
+> https://clinica.devlucaslopes.com.br
 
 ---
 
 ## Autor
 
-Desenvolvido por [Seu Nome]
+Desenvolvido por Lucas Lopes de Barros Batista
