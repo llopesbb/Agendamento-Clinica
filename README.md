@@ -192,7 +192,7 @@ agendamentos     -- consultas agendadas por pacientes
 
 ## Link do video do sistema
 
-> https://youtu.be/qqMOHv_YwRw
+> https://youtu.be/_Hmo3TQD0vQ
 
 ---
 
