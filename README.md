@@ -190,6 +190,10 @@ agendamentos     -- consultas agendadas por pacientes
 
 > https://clinica.devlucaslopes.com.br
 
+## Link do video do sistema
+
+> https://youtu.be/qqMOHv_YwRw
+
 ---
 
 ## Autor
