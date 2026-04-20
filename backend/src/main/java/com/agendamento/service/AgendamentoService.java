@@ -19,7 +19,7 @@ public class AgendamentoService {
     private DisponibilidadeRepository disponibilidadeRepository;
 
     public List<Agendamento> listarTodos() {
-        return agendamentoRepository.findAll();
+        return agendamentoRepository.findAllWithDetails();
     }
 
     public List<Agendamento> buscarPorCpf(String cpf) {
