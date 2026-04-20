@@ -38,5 +38,5 @@ CREATE TABLE IF NOT EXISTS agendamentos (
     FOREIGN KEY (disponibilidade_id) REFERENCES disponibilidade(id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_disponibilidade_prof_disp ON disponibilidade(profissional_id, disponivel);
-CREATE INDEX IF NOT EXISTS idx_agendamentos_cpf ON agendamentos(cpf);
+CREATE INDEX idx_disponibilidade_prof_disp ON disponibilidade(profissional_id, disponivel);
+CREATE INDEX idx_agendamentos_cpf ON agendamentos(cpf);
